@@ -7,9 +7,9 @@ Information (25), Display Menu Items (25), and UX/validation (20).
 
 ## What's included
 
-- `App.js` — the whole app: form, validation, confirmation messages, and list
-- `package.json`, `app.json` — Expo project config
-- No extra native dependencies — runs with plain Expo + React Native
+- `App.js` - the whole app: form, validation, confirmation messages, and list
+- `package.json`, `app.json` - Expo project config
+- No extra native dependencies - runs with plain Expo + React Native
 
 ## Features (mapped to the rubric)
 
