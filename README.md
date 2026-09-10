@@ -50,9 +50,6 @@ Information (25), Display Menu Items (25), and UX/validation (20).
    git remote add origin https://github.com/Zwazwa26p/chef-menu-manager.git
    git push -u origin main
    ```
-   (Replace the URL with your actual new repo's URL.)
-3. Double check the repo is **public** or that your lecturer has access,
-   and that it contains this latest code.
 
 ## Recording the demo video (3–5 min)
 
@@ -63,13 +60,9 @@ Run the app (via Expo Go or the web preview), then screen-record showing:
 4. Successfully adding an item (see the confirmation message)
 5. The item appearing in the list, and the list updating as you add more
 
-Upload the recording to YouTube as **Unlisted**, then copy the link.
-
 ## Submitting Part 2
 
 Per the brief, submit:
 - Your GitHub repo link (this code, pushed)
 - Your Unlisted YouTube video link
 
-Both go into whatever submission form/portal your module uses on the
-IIE portal — that step has to be done from your own student account.
