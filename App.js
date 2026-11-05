@@ -1,312 +1,182 @@
 import React, { useState } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { SafeAreaView, View, Text, ScrollView, Alert, StyleSheet } from 'react-native';
 
-// The three course options the chef can choose from
-const COURSES = ['Starter', 'Main', 'Dessert'];
+import MenuForm from './components/MenuForm';
+import MenuItemCard from './components/MenuItemCard';
+import SearchFilterBar from './components/SearchFilterBar';
+import StatsPanel from './components/StatsPanel';
+import TabBar from './components/TabBar';
+import { COLORS } from './constants';
+import { filterMenuItems, calculateStats } from './utils/menuHelpers';
+
+const TABS = [
+  { key: 'menu', label: 'Menu' },
+  { key: 'form', label: 'Add / Edit' },
+  { key: 'stats', label: 'Statistics' },
+];
 
 export default function App() {
-  // Form field state
-  const [dishName, setDishName] = useState('');
-  const [description, setDescription] = useState('');
-  const [course, setCourse] = useState('');
-  const [price, setPrice] = useState('');
-
-  // List of menu items added so far
   const [menuItems, setMenuItems] = useState([]);
+  const [activeTab, setActiveTab] = useState('menu');
+  const [editingItem, setEditingItem] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [courseFilter, setCourseFilter] = useState('All');
+  const [message, setMessage] = useState('');
 
-  // Validation error messages
-  const [errors, setErrors] = useState({});
-
-  // Temporary success confirmation message
-  const [successMessage, setSuccessMessage] = useState('');
-
-  const validate = () => {
-    const newErrors = {};
-
-    if (!dishName.trim()) {
-      newErrors.dishName = 'Dish name is required.';
-    }
-    if (!description.trim()) {
-      newErrors.description = 'Description is required.';
-    }
-    if (!course) {
-      newErrors.course = 'Please select a course.';
-    }
-    if (!price.trim()) {
-      newErrors.price = 'Price is required.';
-    } else if (isNaN(Number(price)) || Number(price) <= 0) {
-      newErrors.price = 'Enter a valid price greater than 0.';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+  // Shows a short success message at the top of the screen
+  const showMessage = (text) => {
+    setMessage(text);
+    setTimeout(() => setMessage(''), 2500);
   };
 
-  const handleAddItem = () => {
-    if (!validate()) {
-      setSuccessMessage('');
-      return;
+  // Adds a new item, or saves changes if we are editing one
+  const handleSaveItem = (itemData) => {
+    if (editingItem) {
+      setMenuItems((prev) =>
+        prev.map((item) =>
+          item.id === editingItem.id ? { ...item, ...itemData } : item
+        )
+      );
+      setEditingItem(null);
+      showMessage('Menu item updated successfully!');
+    } else {
+      const newItem = { id: Date.now().toString(), ...itemData };
+      setMenuItems((prev) => [...prev, newItem]);
+      showMessage('Menu item added successfully!');
     }
-
-    const newItem = {
-      id: Date.now().toString(),
-      dishName: dishName.trim(),
-      description: description.trim(),
-      course,
-      price: Number(price).toFixed(2),
-    };
-
-    // Automatically update the displayed list
-    setMenuItems((prevItems) => [...prevItems, newItem]);
-
-    // Reset the form
-    setDishName('');
-    setDescription('');
-    setCourse('');
-    setPrice('');
-    setErrors({});
-
-    setSuccessMessage('Menu item added successfully!');
-    setTimeout(() => setSuccessMessage(''), 2500);
+    setActiveTab('menu');
   };
 
-  const renderMenuItem = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.cardHeaderRow}>
-        <Text style={styles.dishName}>{item.dishName}</Text>
-        <Text style={styles.price}>R{item.price}</Text>
-      </View>
-      <Text style={styles.courseTag}>{item.course}</Text>
-      <Text style={styles.description}>{item.description}</Text>
+  const handleStartEdit = (item) => {
+    setEditingItem(item);
+    setActiveTab('form');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingItem(null);
+    setActiveTab('menu');
+  };
+
+  // Asks the chef to confirm before removing an item
+  const handleDelete = (item) => {
+    Alert.alert('Delete menu item', `Delete "${item.dishName}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          setMenuItems((prev) => prev.filter((i) => i.id !== item.id));
+          if (editingItem && editingItem.id === item.id) {
+            setEditingItem(null);
+          }
+          showMessage('Menu item deleted.');
+        },
+      },
+    ]);
+  };
+
+  const handleClearFilters = () => {
+    setSearchText('');
+    setCourseFilter('All');
+  };
+
+  const handleTabChange = (tab) => {
+    // Leaving the form tab while editing cancels the edit
+    if (tab !== 'form' && editingItem) {
+      setEditingItem(null);
+    }
+    setActiveTab(tab);
+  };
+
+  const visibleItems = filterMenuItems(menuItems, searchText, courseFilter);
+  const stats = calculateStats(menuItems);
+
+  const renderMenuTab = () => (
+    <View>
+      <SearchFilterBar
+        searchText={searchText}
+        onSearchChange={setSearchText}
+        courseFilter={courseFilter}
+        onFilterChange={setCourseFilter}
+        onClear={handleClearFilters}
+      />
+
+      <Text style={styles.listHeader}>
+        Menu Items ({visibleItems.length}
+        {visibleItems.length !== menuItems.length ? ` of ${menuItems.length}` : ''})
+      </Text>
+
+      {menuItems.length === 0 ? (
+        <Text style={styles.emptyText}>
+          No menu items yet. Go to the Add / Edit tab to create one.
+        </Text>
+      ) : visibleItems.length === 0 ? (
+        <Text style={styles.emptyText}>No menu items match your search or filter.</Text>
+      ) : (
+        visibleItems.map((item) => (
+          <MenuItemCard
+            key={item.id}
+            item={item}
+            onEdit={handleStartEdit}
+            onDelete={handleDelete}
+          />
+        ))
+      )}
     </View>
   );
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      <View style={styles.header}>
+        <Text style={styles.title}>Chef's Menu Manager</Text>
+      </View>
+
+      {message ? (
+        <View style={styles.messageBanner}>
+          <Text style={styles.messageText}>{message}</Text>
+        </View>
+      ) : null}
+
+      <ScrollView
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
       >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <Text style={styles.title}>Chef's Menu Manager</Text>
-          <Text style={styles.subtitle}>Add and view your menu items</Text>
+        {activeTab === 'menu' && renderMenuTab()}
+        {activeTab === 'form' && (
+          <MenuForm
+            editingItem={editingItem}
+            onSubmit={handleSaveItem}
+            onCancelEdit={handleCancelEdit}
+          />
+        )}
+        {activeTab === 'stats' && <StatsPanel stats={stats} />}
+      </ScrollView>
 
-          {/* --- Add Menu Item Form --- */}
-          <View style={styles.formSection}>
-            <Text style={styles.label}>Dish Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. Grilled Salmon"
-              value={dishName}
-              onChangeText={setDishName}
-            />
-            {errors.dishName ? (
-              <Text style={styles.errorText}>{errors.dishName}</Text>
-            ) : null}
-
-            <Text style={styles.label}>Description</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              placeholder="Short description of the dish"
-              value={description}
-              onChangeText={setDescription}
-              multiline
-              numberOfLines={3}
-            />
-            {errors.description ? (
-              <Text style={styles.errorText}>{errors.description}</Text>
-            ) : null}
-
-            <Text style={styles.label}>Course</Text>
-            <View style={styles.courseRow}>
-              {COURSES.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[
-                    styles.courseButton,
-                    course === c && styles.courseButtonSelected,
-                  ]}
-                  onPress={() => setCourse(c)}
-                >
-                  <Text
-                    style={[
-                      styles.courseButtonText,
-                      course === c && styles.courseButtonTextSelected,
-                    ]}
-                  >
-                    {c}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            {errors.course ? (
-              <Text style={styles.errorText}>{errors.course}</Text>
-            ) : null}
-
-            <Text style={styles.label}>Price (R)</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 149.99"
-              value={price}
-              onChangeText={setPrice}
-              keyboardType="numeric"
-            />
-            {errors.price ? (
-              <Text style={styles.errorText}>{errors.price}</Text>
-            ) : null}
-
-            <TouchableOpacity style={styles.addButton} onPress={handleAddItem}>
-              <Text style={styles.addButtonText}>Add Menu Item</Text>
-            </TouchableOpacity>
-
-            {successMessage ? (
-              <Text style={styles.successText}>{successMessage}</Text>
-            ) : null}
-          </View>
-
-          {/* --- Menu Items List --- */}
-          <View style={styles.listSection}>
-            <Text style={styles.listHeader}>
-              Menu Items ({menuItems.length})
-            </Text>
-
-            {menuItems.length === 0 ? (
-              <Text style={styles.emptyText}>
-                No menu items have been added yet.
-              </Text>
-            ) : (
-              <FlatList
-                data={menuItems}
-                keyExtractor={(item) => item.id}
-                renderItem={renderMenuItem}
-                scrollEnabled={false}
-              />
-            )}
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      <TabBar tabs={TABS} activeTab={activeTab} onChange={handleTabChange} />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#FAF6F0',
-  },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  title: {
-    fontSize: 26,
-    fontWeight: '700',
-    color: '#2F2F2F',
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B6B6B',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  formSection: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#3A3A3A',
-    marginTop: 12,
-    marginBottom: 6,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#DDD',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 15,
-    backgroundColor: '#FDFDFD',
-  },
-  textArea: {
-    minHeight: 70,
-    textAlignVertical: 'top',
-  },
-  errorText: {
-    color: '#C0392B',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  successText: {
-    color: '#1E8449',
-    fontSize: 14,
-    fontWeight: '600',
-    textAlign: 'center',
-    marginTop: 14,
-  },
-  courseRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  courseButton: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: '#D8A657',
-    borderRadius: 8,
-    paddingVertical: 10,
-    marginHorizontal: 4,
-    alignItems: 'center',
-  },
-  courseButtonSelected: {
-    backgroundColor: '#D8A657',
-  },
-  courseButtonText: {
-    color: '#8A6B2E',
-    fontWeight: '600',
-    fontSize: 13,
-  },
-  courseButtonTextSelected: {
-    color: '#FFFFFF',
-  },
-  addButton: {
-    backgroundColor: '#2F5D48',
-    borderRadius: 8,
+  safeArea: { flex: 1, backgroundColor: COLORS.background },
+  header: {
     paddingVertical: 14,
+    paddingTop: 30,
+    backgroundColor: COLORS.primary,
     alignItems: 'center',
-    marginTop: 18,
   },
-  addButtonText: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 15,
+  title: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
+  messageBanner: {
+    backgroundColor: '#E3F4EA',
+    paddingVertical: 10,
+    alignItems: 'center',
   },
-  listSection: {
-    marginTop: 4,
-  },
+  messageText: { color: COLORS.success, fontWeight: '600' },
+  content: { padding: 16, paddingBottom: 30 },
   listHeader: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#2F2F2F',
+    color: COLORS.text,
     marginBottom: 10,
   },
   emptyText: {
@@ -314,46 +184,5 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
     textAlign: 'center',
     marginTop: 10,
-  },
-  card: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 10,
-    borderLeftWidth: 4,
-    borderLeftColor: '#2F5D48',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  cardHeaderRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  dishName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#2F2F2F',
-    flexShrink: 1,
-    marginRight: 8,
-  },
-  price: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: '#2F5D48',
-  },
-  courseTag: {
-    fontSize: 12,
-    color: '#8A6B2E',
-    fontWeight: '600',
-    marginTop: 4,
-    marginBottom: 4,
-  },
-  description: {
-    fontSize: 13,
-    color: '#5A5A5A',
   },
 });

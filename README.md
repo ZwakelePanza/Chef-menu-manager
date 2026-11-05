@@ -1,75 +1,59 @@
-# Chef's Menu Manager — MAST5112 POE Part 2
+# Chef's Menu Manager — MAST5112 Final PoE
 
-A React Native (Expo) app that lets a chef add menu items (Dish Name,
-Description, Course, Price) and view them in a live-updating list.
-Built to satisfy the Part 2 marking rubric: UI (30), Capture Menu
-Information (25), Display Menu Items (25), and UX/validation (20).
+A React Native (Expo) app that lets a chef add, edit, delete, search, filter
+and review statistics for menu items.
 
-## What's included
+Repository: https://github.com/ZwakelePanza/Chef-menu-manager
 
-- `App.js` — the whole app: form, validation, confirmation messages, and list
-- `package.json`, `app.json` — Expo project config
-- No extra native dependencies — runs with plain Expo + React Native
+## Run it
 
-## Features (mapped to the rubric)
+```
+npm install
+npx expo start
+```
 
-- **UI**: clear title, consistent spacing, card-based list, simple color palette
-- **Capture info**: Dish Name, Description, Course (Starter/Main/Dessert buttons), Price
-- **Display**: FlatList of added items, count of items, auto-updates on add
-- **UX**: required-field validation, inline error messages, success
-  confirmation after adding, "no items yet" empty state
+Scan the QR code with Expo Go (SDK 57). Expo Go on iOS needs you to be signed
+in to the same Expo account in the app and in the terminal (`npx expo login`).
 
-## Run it locally
+## Project structure
 
-1. Install Node.js (LTS) if you don't have it: https://nodejs.org
-2. Install the Expo CLI tool (one-time):
-   ```
-   npm install -g expo-cli
-   ```
-   (or just use `npx expo start`, no global install needed)
-3. In this project folder, install dependencies:
-   ```
-   npm install
-   ```
-4. Start the app:
-   ```
-   npx expo start
-   ```
-5. Scan the QR code with the **Expo Go** app on your phone (Android/iOS),
-   or press `w` in the terminal to run it in a browser.
+```
+App.js                      Main screen, state and navigation
+constants.js                Course list and shared colours
+components/
+  AppButton.js              Reusable button (primary / secondary / danger)
+  CourseSelector.js         Course chips, used by the form and the filter
+  MenuForm.js               One form for adding AND editing
+  MenuItemCard.js           One menu item with Edit / Delete buttons
+  SearchFilterBar.js        Search box, course filter, clear button
+  StatsPanel.js             Statistics tiles
+  TabBar.js                 Bottom navigation
+utils/
+  validation.js             Form validation rules
+  menuHelpers.js            Filtering, statistics and price formatting
+```
 
-## Uploading to GitHub
+## Change log (since Part 2)
 
-1. Create a new repository on GitHub (e.g. `chef-menu-manager`).
-2. From this folder, run:
-   ```
-   git init
-   git add .
-   git commit -m "Part 2: working menu manager app"
-   git branch -M main
-   git remote add origin https://github.com/Zwazwa26p/chef-menu-manager.git
-   git push -u origin main
-   ```
-   (Replace the URL with your actual new repo's URL.)
-3. Double check the repo is **public** or that your lecturer has access,
-   and that it contains this latest code.
+### New features
+- **Edit menu items** — tap Edit on a card; the form opens filled in and saves changes.
+- **Delete menu items** — tap Delete and confirm in the pop-up.
+- **Search** — find items by dish name (not case sensitive).
+- **Filter by course** — All, Starter, Main Course or Dessert.
+- **Clear** — one button resets the search and filter.
+- **Statistics screen** — total items, average price, and number of items per course.
+- **Bottom navigation** — Menu, Add / Edit and Statistics tabs.
 
-## Recording the demo video (3–5 min)
+### Refactoring
+- Split the single `App.js` into reusable components (`components/`).
+- Moved validation into `utils/validation.js`.
+- Moved filtering and statistics logic into `utils/menuHelpers.js` so it is not repeated.
+- Moved colours and the course list into `constants.js` (no repeated values).
+- The add and edit screens now share one `MenuForm` component.
+- Course option renamed from "Main" to "Main Course" to match the brief.
 
-Run the app (via Expo Go or the web preview), then screen-record showing:
-1. The user interface (title, form, layout)
-2. Entering menu information for a dish
-3. Triggering validation (e.g. submit with an empty field, see the error)
-4. Successfully adding an item (see the confirmation message)
-5. The item appearing in the list, and the list updating as you add more
-
-Upload the recording to YouTube as **Unlisted**, then copy the link.
-
-## Submitting Part 2
-
-Per the brief, submit:
-- Your GitHub repo link (this code, pushed)
-- Your Unlisted YouTube video link
-
-Both go into whatever submission form/portal your module uses on the
-IIE portal — that step has to be done from your own student account.
+### Improvements
+- Validation: dish name must be at least 2 characters; errors clear as the user fixes the field.
+- Feedback: success messages for add, update and delete; empty-state messages for "no items" and "no matches".
+- Consistent colours, spacing and buttons across all screens.
+- Item count shows "x of y" while a search or filter is active.
