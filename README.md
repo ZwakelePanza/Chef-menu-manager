@@ -1,4 +1,4 @@
-# Chef's Menu Manager — MAST5112 Final PoE
+# Chef's Menu Manager - MAST5112 Final PoE
 
 A React Native (Expo) app that lets a chef add, edit, delete, search, filter
 and review statistics for menu items.
@@ -36,13 +36,13 @@ utils/
 ## Change log (since Part 2)
 
 ### New features
-- **Edit menu items** — tap Edit on a card; the form opens filled in and saves changes.
-- **Delete menu items** — tap Delete and confirm in the pop-up.
-- **Search** — find items by dish name (not case sensitive).
-- **Filter by course** — All, Starter, Main Course or Dessert.
-- **Clear** — one button resets the search and filter.
-- **Statistics screen** — total items, average price, and number of items per course.
-- **Bottom navigation** — Menu, Add / Edit and Statistics tabs.
+- **Edit menu items** - tap Edit on a card; the form opens filled in and saves changes.
+- **Delete menu items** - tap Delete and confirm in the pop-up.
+- **Search** - find items by dish name (not case sensitive).
+- **Filter by course** - All, Starter, Main Course or Dessert.
+- **Clear** - one button resets the search and filter.
+- **Statistics screen** - total items, average price, and number of items per course.
+- **Bottom navigation** - Menu, Add / Edit and Statistics tabs.
 
 ### Refactoring
 - Split the single `App.js` into reusable components (`components/`).
@@ -57,3 +57,4 @@ utils/
 - Feedback: success messages for add, update and delete; empty-state messages for "no items" and "no matches".
 - Consistent colours, spacing and buttons across all screens.
 - Item count shows "x of y" while a search or filter is active.
+- Upgraded the project from Expo SDK 57 to SDK 58 (and React / React Native to match) so it runs the latest expo Go.
